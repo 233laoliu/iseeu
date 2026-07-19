@@ -163,7 +163,7 @@ public final class IseeUCommands {
             ctx.getSource().sendSuccess(() -> Component.literal(" - ")
                     .append(Component.literal(r.name()).withStyle(ChatFormatting.AQUA))
                     .append(Component.literal(" " + shortHwid(r.hwid())))
-                    .append(Component.literal(" [" + r.reason() + "]").withStyle(ChatFormatting.GRAY))), false);
+                    .append(Component.literal(" [" + r.reason() + "]").withStyle(ChatFormatting.GRAY)), false);
         }
         return 1;
     }

@@ -48,9 +48,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.8'
-          # 自动缓存 ~/.gradle/caches 和 ~/.gradle/wrapper
-          cache: true
-          # 只读依赖图，CI 不写入
+          # setup-gradle v4 默认启用依赖缓存；非 main 分支只读避免污染
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
       - name: Cache NeoForge downloads
