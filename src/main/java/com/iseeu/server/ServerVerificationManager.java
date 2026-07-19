@@ -9,7 +9,7 @@ import com.iseeu.network.payloads.VerificationPayload;
 import com.iseeu.util.HashUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.network.ServerConfigurationPacketListener;
+import net.minecraft.network.protocol.configuration.ServerConfigurationPacketListener;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.UUID;

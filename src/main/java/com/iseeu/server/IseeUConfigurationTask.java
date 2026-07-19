@@ -7,7 +7,7 @@ import com.iseeu.network.payloads.HandshakeChallengePayload;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.network.ConfigurationTask;
-import net.minecraft.server.network.ServerConfigurationPacketListener;
+import net.minecraft.network.protocol.configuration.ServerConfigurationPacketListener;
 import net.neoforged.neoforge.network.configuration.ICustomConfigurationTask;
 
 import java.util.UUID;
