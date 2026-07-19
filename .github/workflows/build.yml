@@ -1,0 +1,114 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      log_level:
+        description: 'Gradle 日志级别 (--stacktrace / --info / --debug)'
+        required: false
+        default: '--stacktrace'
+        type: choice
+        options:
+          - '--stacktrace'
+          - '--info'
+          - '--debug'
+
+# 同分支多次推送时取消旧的构建，省 CI 额度
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (Java 21 / Gradle 8.8)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # 项目仓库未提交 gradle-wrapper.jar，这里直接由 setup-gradle 提供 Gradle 8.8
+      # 与 gradle/wrapper/gradle-wrapper.properties 中 distributionUrl 对齐
+      - name: Setup Gradle 8.8
+        uses: actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+          # 自动缓存 ~/.gradle/caches 和 ~/.gradle/wrapper
+          cache: true
+          # 只读依赖图，CI 不写入
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Cache NeoForge downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches/modules-2/files-2.1/net.neoforged
+            ~/.gradle/caches/modules-2/files-2.1/net.minecraft
+            ~/.gradle/caches/modules-2/files-2.1/org.parchmentmc
+          key: neoforge-${{ vars.NEOFORGE_CACHE_KEY || '21.1.151' }}-mc1.21.1
+
+      - name: Show environment
+        run: |
+          echo "=== Runner info ==="
+          echo "OS:     $(uname -a)"
+          echo "Java:   $(java -version 2>&1)"
+          echo "Gradle: $(gradle --version 2>&1 | grep -E '^Gradle|^Kotlin|^JVM' | head -3)"
+          echo ""
+          echo "=== Project tree (top level) ==="
+          ls -la
+          echo ""
+          echo "=== Git info ==="
+          git log --oneline -1
+          git status --short
+
+      - name: Build with Gradle
+        run: gradle build --no-daemon ${{ github.event.inputs.log_level || '--stacktrace' }}
+
+      - name: List build outputs
+        if: always()
+        run: |
+          echo "=== build/libs/ ==="
+          ls -la build/libs/ 2>/dev/null || echo "(build/libs/ 不存在 —— 构建可能失败)"
+          echo ""
+          echo "=== build/ 顶层 ==="
+          ls -la build/ 2>/dev/null || echo "(build/ 不存在)"
+
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iseeu-${{ github.sha }}
+          path: |
+            build/libs/*.jar
+            !build/libs/*-sources.jar
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
+
+      # 构建失败时上传日志便于排查
+      - name: Upload failure logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iseeu-logs-${{ github.sha }}
+          path: |
+            build/reports/
+            build/logs/
+            runs/
+          if-no-files-found: ignore
+          retention-days: 7
