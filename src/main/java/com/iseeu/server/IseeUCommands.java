@@ -72,6 +72,9 @@ public final class IseeUCommands {
                         .then(Commands.argument("player", EntityArgument.player())
                                 .executes(IseeUCommands::cmdCheck)))
                 // ---- everyone ----
+                .then(Commands.literal("hashtest")
+                        .requires(s -> s.hasPermission(2))
+                        .executes(IseeUCommands::cmdHashtest))
                 .then(Commands.literal("status")
                         .executes(IseeUCommands::cmdStatus))
         );
@@ -195,6 +198,14 @@ public final class IseeUCommands {
                 + " requireHwid=" + IseeUConfig.REQUIRE_HARDWARE_FINGERPRINT.get()
                 + " bans=" + BanManager.all().size()
                 + " pending=" + VerificationState.pendingCount()), false);
+        return 1;
+    }
+
+    private static int cmdHashtest(CommandContext<CommandSourceStack> ctx) {
+        String report = com.iseeu.modlist.ModListCollector.describe();
+        for (String line : report.split("\n")) {
+            ctx.getSource().sendSuccess(() -> Component.literal("[IseeU] " + line), false);
+        }
         return 1;
     }
 
