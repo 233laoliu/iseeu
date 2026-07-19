@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout
@@ -97,6 +97,19 @@ jobs:
           if-no-files-found: error
           retention-days: 14
           compression-level: 6
+
+      - name: Create Nightly Release
+        if: success() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        uses: ncipollo/release-action@v1
+        with:
+          tag: nightly
+          name: "Nightly Build"
+          body: "Automated build from commit ${{ github.sha }}"
+          artifacts: "build/libs/*.jar,!build/libs/*-sources.jar"
+          allowUpdates: true
+          makeLatest: true
+          prerelease: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # 构建失败时上传日志便于排查
       - name: Upload failure logs
