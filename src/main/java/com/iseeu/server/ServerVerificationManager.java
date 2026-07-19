@@ -52,10 +52,14 @@ public final class ServerVerificationManager {
         TIMEOUT.schedule(() -> {
             VerificationState.Entry e = VerificationState.get(playerUuid);
             if (e == null || e.status != VerificationState.Status.PENDING) return;
-            if (!e.challengeId.equals(challengeId)) return; // superseded
+            if (!e.challengeId.equals(challengeId)) return;
             IseeUMod.LOGGER.warn("[IseeU] {} timed out verification (config phase).", playerUuid);
-            listener.disconnect(Component.literal("[IseeU] ")
-                    .append(Component.translatable("iseeu.kick.timeout")));
+            if (IseeUConfig.ENFORCE_MODE.get() == EnforceMode.LOG_ONLY) {
+                listener.finishCurrentTask(IseeUConfigurationTask.TYPE);
+            } else {
+                listener.disconnect(Component.literal("[IseeU] ")
+                        .append(Component.translatable("iseeu.kick.timeout")));
+            }
         }, seconds, TimeUnit.SECONDS);
     }
 
