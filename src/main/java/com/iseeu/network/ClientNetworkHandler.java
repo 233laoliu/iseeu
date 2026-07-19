@@ -50,11 +50,10 @@ public final class ClientNetworkHandler {
                     challengeId.substring(0, Math.min(8, challengeId.length())),
                     hwid.length());
         } catch (Throwable t) {
-            IseeUMod.LOGGER.error("[IseeU] failed to build verification reply: {}", t.toString());
-            // Tell the server we couldn't comply; it will decide to kick or not.
-            PacketDistributor.sendToServer(new VerificationPayload(
-                    payload.challengeId(), System.currentTimeMillis(), "error",
-                    "", "", ""));
+            IseeUMod.LOGGER.error("[IseeU] failed to build verification reply:", t);
+            // Don't try to send an error payload — the connection may already be dead,
+            // and PacketDistributor.sendToServer requires a non-null payload which can
+            // cause a secondary NPE that crashes the connection thread.
         }
     }
 }
