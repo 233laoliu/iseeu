@@ -2,7 +2,7 @@
 
 ## 安装
 
-**客户端和服务端都要装。** 从 [Release](https://github.com/Craft233MC/iseeu/releases/tag/nightly) 下载，放入两端 `mods/`。
+**客户端和服务端都要装。** 从 [Release](https://github.com/233laoliu/iseeu/releases/tag/nightly) 下载，放入两端 `mods/`。
 
 ## 生成密钥
 

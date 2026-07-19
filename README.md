@@ -12,14 +12,14 @@
 
 ## 快速开始
 
-1. [下载最新 Nightly Build](https://github.com/Craft233MC/iseeu/releases/tag/nightly)
+1. [下载最新 Nightly Build](https://github.com/233laoliu/iseeu/releases/tag/nightly)
 2. 客户端和服务端都放入 `mods/`
-3. 按 [Wiki 配置指南](https://github.com/Craft233MC/iseeu/wiki) 填写 `config/iseeu-common.toml`
+3. 按 [Wiki 配置指南](https://github.com/233laoliu/iseeu/wiki) 填写 `config/iseeu-common.toml`
 4. 先用 `LOG_ONLY` 模式试跑，确认无误杀后切 `ENFORCE`
 
 ## 文档
 
-完整配置说明、命令手册、常见问题见 [Wiki](https://github.com/Craft233MC/iseeu/wiki)。
+完整配置说明、命令手册、常见问题见 [Wiki](https://github.com/233laoliu/iseeu/wiki)。
 
 ## 安全模型
 
