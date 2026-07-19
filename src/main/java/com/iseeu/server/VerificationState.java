@@ -39,17 +39,24 @@ public final class VerificationState {
     }
 
     private static final ConcurrentMap<UUID, Entry> BY_PLAYER = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, Entry> BY_CHALLENGE = new ConcurrentHashMap<>();
 
     private VerificationState() {}
 
     public static Entry issueChallenge(UUID playerUuid, String challengeId) {
         Entry e = new Entry(playerUuid, challengeId, System.currentTimeMillis());
         BY_PLAYER.put(playerUuid, e);
+        BY_CHALLENGE.put(challengeId, e);
         return e;
     }
 
     public static Entry get(UUID playerUuid) {
         return BY_PLAYER.get(playerUuid);
+    }
+
+    /** Look up by challenge id — used by the configuration-phase handler. */
+    public static Entry getByChallenge(String challengeId) {
+        return BY_CHALLENGE.get(challengeId);
     }
 
     public static boolean isVerified(UUID playerUuid) {
@@ -79,7 +86,8 @@ public final class VerificationState {
     }
 
     public static void remove(UUID playerUuid) {
-        BY_PLAYER.remove(playerUuid);
+        Entry e = BY_PLAYER.remove(playerUuid);
+        if (e != null) BY_CHALLENGE.remove(e.challengeId);
     }
 
     public static int pendingCount() {

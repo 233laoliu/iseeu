@@ -2,14 +2,14 @@ package com.iseeu;
 
 import com.iseeu.config.IseeUConfig;
 import com.iseeu.network.ModPayloads;
-import com.iseeu.server.ServerVerificationManager;
+import com.iseeu.server.IseeUConfigurationTask;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
 import org.slf4j.Logger;
 
 /**
@@ -21,6 +21,9 @@ import org.slf4j.Logger;
  *   <li>Client  = collector + reporter. Never trusts its own state, only forwards signed blobs.</li>
  *   <li>Both    = required. A client without the mod cannot join a server that enforces it.</li>
  * </ul>
+ *
+ * <p>Handshake runs in the <strong>configuration phase</strong> — before the player enters the
+ * game world. A rejected client is disconnected during config and never sees the world.
  */
 @Mod(IseeUMod.MOD_ID)
 public final class IseeUMod {
@@ -29,23 +32,19 @@ public final class IseeUMod {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public IseeUMod(IEventBus modEventBus, ModContainer modContainer) {
-        // ---- common mod-load events ----
         modEventBus.addListener(IseeUMod::commonSetup);
         modEventBus.addListener(ModPayloads::register);
+        // Configuration-phase handshake task registration.
+        modEventBus.addListener(IseeUMod::onRegisterConfigTasks);
 
-        // ---- runtime events ----
-        // Server side: handshake kick-off, verification state, ban checks.
-        // Client handlers are wired up via playToClient in ModPayloads — no separate event bus
-        // registration needed (NeoForge 1.21.1 registers them inline with the payload).
-        NeoForge.EVENT_BUS.register(ServerVerificationManager.class);
-
-        // ---- config (server file: config/iseeu-server.toml) ----
         modContainer.registerConfig(ModConfig.Type.SERVER, IseeUConfig.SPEC);
     }
 
     private static void commonSetup(final FMLCommonSetupEvent event) {
-        // Do NOT read config values here — SERVER configs are not loaded yet at this stage.
-        // Config is safe to read only after the server has started (e.g. in ServerAboutToStartEvent).
         LOGGER.info("[IseeU] loaded.");
+    }
+
+    private static void onRegisterConfigTasks(final RegisterConfigurationTasksEvent event) {
+        event.register(new IseeUConfigurationTask(event.getListener()));
     }
 }

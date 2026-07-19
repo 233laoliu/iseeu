@@ -4,7 +4,6 @@ import com.iseeu.IseeUMod;
 import com.iseeu.hardware.HardwareFingerprint;
 import com.iseeu.modlist.ModListCollector;
 import com.iseeu.network.payloads.HandshakeChallengePayload;
-import com.iseeu.network.payloads.ResultPayload;
 import com.iseeu.network.payloads.VerificationPayload;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -57,22 +56,5 @@ public final class ClientNetworkHandler {
                     payload.challengeId(), System.currentTimeMillis(), "error",
                     "", "", ""));
         }
-    }
-
-    /**
-     * Server told us the verdict. If we failed, the disconnect is already inbound from the
-     * server; we just surface the reason to the chat window for the user.
-     */
-    public static void onResult(final ResultPayload payload, final IPayloadContext ctx) {
-        if (payload.success()) {
-            IseeUMod.LOGGER.debug("[IseeU] server: verified.");
-            return;
-        }
-        IseeUMod.LOGGER.warn("[IseeU] server rejected: {}", payload.message());
-        ctx.enqueueWork(() -> {
-            // We can't safely reference Minecraft class here at compile-time without forcing a
-            // client-only dependency, so we just log. The server-side disconnect Component is
-            // what the user will actually see on the disconnect screen.
-        });
     }
 }
