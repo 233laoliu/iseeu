@@ -44,6 +44,9 @@ public final class VerificationState {
     private VerificationState() {}
 
     public static Entry issueChallenge(UUID playerUuid, String challengeId) {
+        // Clean up old entries for this player first (reconnect scenario).
+        Entry old = BY_PLAYER.get(playerUuid);
+        if (old != null) BY_CHALLENGE.remove(old.challengeId);
         Entry e = new Entry(playerUuid, challengeId, System.currentTimeMillis());
         BY_PLAYER.put(playerUuid, e);
         BY_CHALLENGE.put(challengeId, e);
@@ -80,6 +83,15 @@ public final class VerificationState {
         if (e != null) e.hwid = hwid;
     }
 
+    /** Atomically mark verified + record HWID in one shot (avoids race where status=VERIFIED but hwid=null). */
+    public static void setVerified(UUID playerUuid, String hwid) {
+        Entry e = BY_PLAYER.get(playerUuid);
+        if (e != null) {
+            e.hwid = hwid;
+            e.status = Status.VERIFIED;
+        }
+    }
+
     public static String getHwid(UUID playerUuid) {
         Entry e = BY_PLAYER.get(playerUuid);
         return e != null ? e.hwid : null;
@@ -87,10 +99,17 @@ public final class VerificationState {
 
     public static void remove(UUID playerUuid) {
         Entry e = BY_PLAYER.remove(playerUuid);
-        if (e != null) BY_CHALLENGE.remove(e.challengeId);
+        if (e != null) {
+            BY_CHALLENGE.remove(e.challengeId);
+            com.iseeu.network.ReplayProtection.cleanup(playerUuid.toString());
+        }
     }
 
     public static int pendingCount() {
-        return BY_PLAYER.size();
+        int count = 0;
+        for (Entry e : BY_PLAYER.values()) {
+            if (e.status == Status.PENDING) count++;
+        }
+        return count;
     }
 }

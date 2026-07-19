@@ -116,8 +116,7 @@ public final class ServerVerificationManager {
         }
 
         // (6) success — let the player in.
-        VerificationState.setStatus(uuid, VerificationState.Status.VERIFIED);
-        VerificationState.setHwid(uuid, payload.hwid());
+        VerificationState.setVerified(uuid, payload.hwid());
         IseeUMod.LOGGER.info("[IseeU] {} verified (hwid={}).",
                 uuid, shortHwid(payload.hwid()));
         ctx.finishCurrentTask(IseeUConfigurationTask.TYPE);

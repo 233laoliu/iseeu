@@ -42,7 +42,9 @@ public final class ReplayProtection {
         }
 
         int capacity = Math.max(16, IseeUConfig.NONCE_CACHE_SIZE.get());
-        LinkedHashMap<String, Long> set = BY_PLAYER.computeIfAbsent(playerUuid, k -> new LinkedHashMap<>(capacity, 0.75f, true) {
+        // Insertion-order LRU — we never access existing entries, only insert and check,
+        // so access-ordered tracking is wasted overhead.
+        LinkedHashMap<String, Long> set = BY_PLAYER.computeIfAbsent(playerUuid, k -> new LinkedHashMap<>(capacity, 0.75f, false) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<String, Long> eldest) {
                 return size() > capacity;
@@ -55,5 +57,15 @@ public final class ReplayProtection {
         }
         set.put(nonce, clientTimeMs);
         return true;
+    }
+
+    /** Remove per-player nonce cache — call when the player disconnects. */
+    public static void cleanup(String playerUuid) {
+        BY_PLAYER.remove(playerUuid);
+    }
+
+    /** An alias for backward compat / clarity when a challenge is being aborted. */
+    public static void reset(String playerUuid) {
+        cleanup(playerUuid);
     }
 }
