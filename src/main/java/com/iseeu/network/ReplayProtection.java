@@ -63,9 +63,4 @@ public final class ReplayProtection {
     public static void cleanup(String playerUuid) {
         BY_PLAYER.remove(playerUuid);
     }
-
-    /** An alias for backward compat / clarity when a challenge is being aborted. */
-    public static void reset(String playerUuid) {
-        cleanup(playerUuid);
-    }
 }
