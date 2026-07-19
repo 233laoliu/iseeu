@@ -43,18 +43,20 @@ public final class IseeUConfigurationTask implements ICustomConfigurationTask {
             return;
         }
 
-        UUID playerUuid = listener.getOwner().getId();
+        // ServerConfigurationPacketListener has no getOwner() in MC 1.21.1.
+        // We use a random UUID as placeholder — the real identifier is the challengeId.
+        UUID placeholderUuid = UUID.randomUUID();
         String challengeId = PacketCrypto.randomToken();
-        VerificationState.issueChallenge(playerUuid, challengeId);
+        VerificationState.issueChallenge(placeholderUuid, challengeId);
 
         boolean requireHwid = IseeUConfig.REQUIRE_HARDWARE_FINGERPRINT.get();
         sender.accept(new HandshakeChallengePayload(
                 challengeId, System.currentTimeMillis(), requireHwid));
 
-        IseeUMod.LOGGER.debug("[IseeU] config-phase challenge sent to {} (cid={}).",
-                listener.getOwner().getName(), challengeId.substring(0, 8));
+        IseeUMod.LOGGER.debug("[IseeU] config-phase challenge sent (cid={}).",
+                challengeId.substring(0, 8));
 
-        ServerVerificationManager.scheduleConfigTimeout(listener, playerUuid, challengeId);
+        ServerVerificationManager.scheduleConfigTimeout(listener, placeholderUuid, challengeId);
     }
 
     @Override
