@@ -153,11 +153,11 @@ public final class IseeUCommands {
             return 1;
         }
         int pages = (all.size() + PER_PAGE - 1) / PER_PAGE;
-        if (page > pages) page = pages;
-        int from = (page - 1) * PER_PAGE;
+        int finalPage = Math.min(page, pages);
+        int from = (finalPage - 1) * PER_PAGE;
         int to = Math.min(from + PER_PAGE, all.size());
         ctx.getSource().sendSuccess(() -> Component.literal(
-                "[IseeU] bans " + all.size() + " (page " + page + "/" + pages + ")"), false);
+                "[IseeU] bans " + all.size() + " (page " + finalPage + "/" + pages + ")"), false);
         for (int i = from; i < to; i++) {
             BanManager.BanRecord r = all.get(i);
             ctx.getSource().sendSuccess(() -> Component.literal(" - ")
