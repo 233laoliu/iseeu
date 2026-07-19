@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
@@ -143,8 +144,20 @@ public final class HardwareCollector {
             String line;
             while ((line = r.readLine()) != null) sb.append(line).append('\n');
         }
-        try { p.waitFor(); } catch (InterruptedException ie) {
+        // Timeout — subprocess must NOT hang the network thread indefinitely.
+        try {
+            if (!p.waitFor(15, TimeUnit.SECONDS)) {
+                p.destroyForcibly();
+                throw new IOException("subprocess timed out: " + String.join(" ", cmd));
+            }
+        } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
+            p.destroyForcibly();
+            throw new IOException("subprocess interrupted: " + String.join(" ", cmd));
+        }
+        // Non-zero exit code means the command failed — output may be garbage.
+        if (p.exitValue() != 0) {
+            throw new IOException("subprocess exited " + p.exitValue() + ": " + String.join(" ", cmd));
         }
         return sb.toString();
     }

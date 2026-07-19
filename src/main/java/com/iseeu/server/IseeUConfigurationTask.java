@@ -7,6 +7,7 @@ import com.iseeu.network.payloads.HandshakeChallengePayload;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.network.ConfigurationTask;
+import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import net.minecraft.network.protocol.configuration.ServerConfigurationPacketListener;
 import net.neoforged.neoforge.network.configuration.ICustomConfigurationTask;
 
@@ -43,20 +44,29 @@ public final class IseeUConfigurationTask implements ICustomConfigurationTask {
             return;
         }
 
-        // ServerConfigurationPacketListener has no getOwner() in MC 1.21.1.
-        // We use a random UUID as placeholder — the real identifier is the challengeId.
-        UUID placeholderUuid = UUID.randomUUID();
+        // Extract real player UUID via reflection (ServerConfigurationPacketListener
+        // interface doesn't expose it, but the runtime impl always has getOwner()).
+        UUID playerUuid;
+        String playerName;
+        if (listener instanceof ServerConfigurationPacketListenerImpl impl) {
+            playerUuid = impl.getOwner().getId();
+            playerName = impl.getOwner().getName();
+        } else {
+            // Fallback — should not happen on a real server.
+            playerUuid = UUID.randomUUID();
+            playerName = "?";
+        }
         String challengeId = PacketCrypto.randomToken();
-        VerificationState.issueChallenge(placeholderUuid, challengeId);
+        VerificationState.issueChallenge(playerUuid, challengeId);
 
         boolean requireHwid = IseeUConfig.REQUIRE_HARDWARE_FINGERPRINT.get();
         sender.accept(new HandshakeChallengePayload(
                 challengeId, System.currentTimeMillis(), requireHwid));
 
-        IseeUMod.LOGGER.debug("[IseeU] config-phase challenge sent (cid={}).",
-                challengeId.substring(0, 8));
+        IseeUMod.LOGGER.debug("[IseeU] config-phase challenge sent to {} (cid={}).",
+                playerName, challengeId.substring(0, 8));
 
-        ServerVerificationManager.scheduleConfigTimeout(listener, placeholderUuid, challengeId);
+        ServerVerificationManager.scheduleConfigTimeout(listener, playerUuid, challengeId);
     }
 
     @Override

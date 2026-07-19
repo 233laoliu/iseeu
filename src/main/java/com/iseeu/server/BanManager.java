@@ -5,16 +5,20 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +49,8 @@ public final class BanManager {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    private static final ConcurrentMap<String, BanRecord> BANNED = new ConcurrentHashMap<>();
+    // Volatile reference — load() atomically swaps, ban/unban operate on latest.
+    private static volatile ConcurrentMap<String, BanRecord> BANNED = new ConcurrentHashMap<>();
 
     private BanManager() {}
 
@@ -54,13 +59,15 @@ public final class BanManager {
     // ------------------------------------------------------------------
 
     public static synchronized void load() {
-        BANNED.clear();
+        var newMap = new ConcurrentHashMap<String, BanRecord>();
         if (!Files.exists(BAN_FILE)) {
+            BANNED = newMap;
             IseeUMod.LOGGER.info("[IseeU] no existing ban file; starting empty.");
             return;
         }
         try {
-            JsonObject root = JsonParser.parseString(Files.readString(BAN_FILE)).getAsJsonObject();
+            String raw = Files.readString(BAN_FILE, StandardCharsets.UTF_8);
+            JsonObject root = JsonParser.parseString(raw).getAsJsonObject();
             JsonArray arr = root.has("bans") ? root.getAsJsonArray("bans") : new JsonArray();
             for (JsonElement el : arr) {
                 JsonObject o = el.getAsJsonObject();
@@ -69,20 +76,25 @@ public final class BanManager {
                 String uuid = o.has("uuid") ? o.get("uuid").getAsString() : "";
                 String reason = o.has("reason") ? o.get("reason").getAsString() : "";
                 String at = o.has("at") ? o.get("at").getAsString() : Instant.now().toString();
-                BANNED.put(hwid.toLowerCase(Locale.ROOT), new BanRecord(hwid, name, uuid, reason, at));
+                newMap.put(hwid.toLowerCase(Locale.ROOT), new BanRecord(hwid, name, uuid, reason, at));
             }
-            IseeUMod.LOGGER.info("[IseeU] loaded {} HWID bans.", BANNED.size());
-        } catch (Exception e) {
-            IseeUMod.LOGGER.error("[IseeU] failed to read ban file {}: {}", BAN_FILE, e.toString());
+            BANNED = newMap;  // atomic swap — no window where isBanned() sees half-loaded data
+            IseeUMod.LOGGER.info("[IseeU] loaded {} HWID bans.", newMap.size());
+        } catch (JsonSyntaxException | JsonIOException e) {
+            IseeUMod.LOGGER.error("[IseeU] ban file is corrupt JSON — ignored: {}", e.toString());
+        } catch (IOException e) {
+            IseeUMod.LOGGER.error("[IseeU] failed to read ban file: {}", e.toString());
         }
     }
 
     public static synchronized void save() {
+        var current = BANNED;
+        Path tmpFile = CONFIG_DIR.resolve("iseeu-bans.json.tmp");
         try {
             Files.createDirectories(CONFIG_DIR);
             JsonObject root = new JsonObject();
             JsonArray arr = new JsonArray();
-            for (BanRecord r : BANNED.values()) {
+            for (BanRecord r : current.values()) {
                 JsonObject o = new JsonObject();
                 o.addProperty("hwid", r.hwid);
                 o.addProperty("name", r.name);
@@ -92,9 +104,11 @@ public final class BanManager {
                 arr.add(o);
             }
             root.add("bans", arr);
-            Files.writeString(BAN_FILE, GSON.toJson(root));
+            Files.writeString(tmpFile, GSON.toJson(root), StandardCharsets.UTF_8);
+            Files.move(tmpFile, BAN_FILE, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             IseeUMod.LOGGER.error("[IseeU] failed to write ban file: {}", e.toString());
+            try { Files.deleteIfExists(tmpFile); } catch (IOException ignored) {}
         }
     }
 

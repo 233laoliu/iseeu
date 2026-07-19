@@ -60,7 +60,13 @@ public final class ServerVerificationManager {
                 listener.disconnect(Component.literal("[IseeU] ")
                         .append(Component.translatable("iseeu.kick.timeout")));
             }
+            VerificationState.remove(playerUuid);
         }, seconds, TimeUnit.SECONDS);
+    }
+
+    /** Shut down the timeout scheduler. Call on server stop. */
+    public static void shutdown() {
+        TIMEOUT.shutdownNow();
     }
 
     // ==================================================================
