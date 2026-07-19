@@ -45,7 +45,7 @@ jobs:
       # 项目仓库未提交 gradle-wrapper.jar，这里直接由 setup-gradle 提供 Gradle 8.8
       # 与 gradle/wrapper/gradle-wrapper.properties 中 distributionUrl 对齐
       - name: Setup Gradle 8.8
-        uses: actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.8'
           # 自动缓存 ~/.gradle/caches 和 ~/.gradle/wrapper
