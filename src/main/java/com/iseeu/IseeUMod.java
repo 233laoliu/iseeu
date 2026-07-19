@@ -44,6 +44,8 @@ public final class IseeUMod {
     }
 
     private static void commonSetup(final FMLCommonSetupEvent event) {
-        LOGGER.info("[IseeU] loaded. mode = {}", IseeUConfig.ENFORCE_MODE.get());
+        // Do NOT read config values here — SERVER configs are not loaded yet at this stage.
+        // Config is safe to read only after the server has started (e.g. in ServerAboutToStartEvent).
+        LOGGER.info("[IseeU] loaded.");
     }
 }
