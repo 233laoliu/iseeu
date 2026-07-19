@@ -23,6 +23,3 @@ Thumbs.db
 
 # logs
 *.log
-
-# 排除 README（用户要求不上传）
-README.md
