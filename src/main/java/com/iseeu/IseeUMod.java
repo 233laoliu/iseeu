@@ -37,7 +37,7 @@ public final class IseeUMod {
         // Configuration-phase handshake task registration.
         modEventBus.addListener(IseeUMod::onRegisterConfigTasks);
 
-        modContainer.registerConfig(ModConfig.Type.SERVER, IseeUConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.COMMON, IseeUConfig.SPEC);
     }
 
     private static void commonSetup(final FMLCommonSetupEvent event) {
