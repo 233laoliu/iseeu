@@ -4,7 +4,8 @@ import com.iseeu.IseeUMod;
 import com.iseeu.network.payloads.HandshakeChallengePayload;
 import com.iseeu.network.payloads.ResultPayload;
 import com.iseeu.network.payloads.VerificationPayload;
-import net.neoforged.fml.event.lifecycle.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.HandlerThread;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 /**
@@ -12,14 +13,15 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  *
  * <p>Direction map:
  * <ul>
- *   <li>{@link HandshakeChallengePayload} — S→C</li>
- *   <li>{@link VerificationPayload}        — C→S (server handler registered here)</li>
- *   <li>{@link ResultPayload}              — S→C</li>
+ *   <li>{@link HandshakeChallengePayload} — S→C (client handler: {@link ClientNetworkHandler#onChallenge})</li>
+ *   <li>{@link VerificationPayload}        — C→S (server handler: {@link ServerNetworkHandler#onVerification})</li>
+ *   <li>{@link ResultPayload}              — S→C (client handler: {@link ClientNetworkHandler#onResult})</li>
  * </ul>
  *
- * <p>Server handlers for C→S payloads are registered directly. Client handlers for S→C payloads
- * are registered via {@link ClientPayloadRegistration} (which is side-restricted so the server
- * never loads client-only handler classes).
+ * <p>NeoForge 1.21.1 uses {@code playToClient}/{@code playToServer} with an inline handler —
+ * there is no separate {@code RegisterClientPayloadHandlersEvent} (that was introduced in 1.21.2+).
+ * ClientNetworkHandler is side-safe (no client-only class refs), so loading it on a dedicated
+ * server is harmless.
  */
 public final class ModPayloads {
 
@@ -28,17 +30,25 @@ public final class ModPayloads {
     private ModPayloads() {}
 
     public static void register(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar registrar = event.registrar(NETWORK_VERSION);
+        // Challenge handler does blocking IO (hardware collection) — run on network thread.
+        final PayloadRegistrar registrar = event.registrar(NETWORK_VERSION)
+                .executesOn(HandlerThread.NETWORK);
 
-        // Client → Server: server-side handler runs on the network thread.
+        // Client → Server: server-side handler.
         registrar.playToServer(
                 VerificationPayload.TYPE,
                 VerificationPayload.STREAM_CODEC,
                 ServerNetworkHandler::onVerification);
 
-        // Server → Client: codec only; handlers wired up client-side.
-        registrar.playToClient(HandshakeChallengePayload.TYPE, HandshakeChallengePayload.STREAM_CODEC);
-        registrar.playToClient(ResultPayload.TYPE, ResultPayload.STREAM_CODEC);
+        // Server → Client: client-side handlers wired up directly (1.21.1 API).
+        registrar.playToClient(
+                HandshakeChallengePayload.TYPE,
+                HandshakeChallengePayload.STREAM_CODEC,
+                ClientNetworkHandler::onChallenge);
+        registrar.playToClient(
+                ResultPayload.TYPE,
+                ResultPayload.STREAM_CODEC,
+                ClientNetworkHandler::onResult);
 
         IseeUMod.LOGGER.debug("[IseeU] payloads registered (version={}).", NETWORK_VERSION);
     }

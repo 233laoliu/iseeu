@@ -2,7 +2,7 @@ package com.iseeu.modlist;
 
 import com.iseeu.util.HashUtils;
 import net.neoforged.fml.ModList;
-import net.neoforged.fml.loading.moddiscovery.ModInfo;
+import net.neoforged.fml.loading.moddiscovery.IModInfo;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -23,9 +23,9 @@ public final class ModListCollector {
 
     /** @return sorted list of "modId@version" strings for every loaded mod. */
     public static List<String> entries() {
-        List<ModInfo> mods = ModList.get().getMods();
+        List<IModInfo> mods = ModList.get().getMods();
         List<String> out = new ArrayList<>(mods.size());
-        for (ModInfo info : mods) {
+        for (IModInfo info : mods) {
             // Skip built-in / invisible system mods (neoforge itself is usually wanted though).
             String id = info.getModId();
             String ver = info.getVersion().toString();
@@ -36,9 +36,9 @@ public final class ModListCollector {
     }
 
     public static List<String> modIds() {
-        List<ModInfo> mods = ModList.get().getMods();
+        List<IModInfo> mods = ModList.get().getMods();
         List<String> out = new ArrayList<>(mods.size());
-        for (ModInfo info : mods) out.add(info.getModId());
+        for (IModInfo info : mods) out.add(info.getModId());
         out.sort(Comparator.naturalOrder());
         return out;
     }

@@ -6,17 +6,15 @@ import com.iseeu.modlist.ModListCollector;
 import com.iseeu.network.payloads.HandshakeChallengePayload;
 import com.iseeu.network.payloads.ResultPayload;
 import com.iseeu.network.payloads.VerificationPayload;
-import net.neoforged.neoforge.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-
-import java.util.List;
 
 /**
  * Client-side payload handlers.
  *
- * <p>Registered by {@link ClientPayloadRegistration} (Dist.CLIENT). This class is safe to load on
- * a dedicated server — its handlers are simply never wired up there — but it deliberately avoids
- * referencing client-only Minecraft types so class-loading is also side-safe.
+ * <p>Handlers are registered in {@link ModPayloads} via playToClient. This class is safe to load
+ * on a dedicated server — it references no client-only Minecraft types, and its handlers are
+ * only invoked on the client (S→C payloads never fire server-side).
  *
  * <p>Handlers run on the network thread (set at registration time) so that the blocking
  * hardware-id collection in {@link #onChallenge} does not stall the client render thread.
@@ -34,7 +32,6 @@ public final class ClientNetworkHandler {
             final long clientTime = System.currentTimeMillis();
             final String nonce = PacketCrypto.newNonce();
             final String modListHash = ModListCollector.hash();
-            final List<String> modList = ModListCollector.entries();
 
             final String hwid;
             if (payload.requireHardwareFingerprint()) {
@@ -47,18 +44,18 @@ public final class ClientNetworkHandler {
             final String message = challengeId + "|" + clientTime + "|" + nonce + "|" + modListHash + "|" + hwid;
             final String signature = PacketCrypto.signMessage(message);
 
-            ClientPacketDistributor.sendToServer(new VerificationPayload(
-                    challengeId, clientTime, nonce, modListHash, modList, hwid, signature));
+            PacketDistributor.sendToServer(new VerificationPayload(
+                    challengeId, clientTime, nonce, modListHash, hwid, signature));
 
-            IseeUMod.LOGGER.debug("[IseeU] reply sent (cid={}, mods={}, hwid_len={}).",
+            IseeUMod.LOGGER.debug("[IseeU] reply sent (cid={}, hwid_len={}).",
                     challengeId.substring(0, Math.min(8, challengeId.length())),
-                    modList.size(), hwid.length());
+                    hwid.length());
         } catch (Throwable t) {
             IseeUMod.LOGGER.error("[IseeU] failed to build verification reply: {}", t.toString());
             // Tell the server we couldn't comply; it will decide to kick or not.
-            ClientPacketDistributor.sendToServer(new VerificationPayload(
+            PacketDistributor.sendToServer(new VerificationPayload(
                     payload.challengeId(), System.currentTimeMillis(), "error",
-                    "", List.of(), "", ""));
+                    "", "", ""));
         }
     }
 

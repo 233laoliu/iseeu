@@ -14,7 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
@@ -171,30 +171,8 @@ public final class ServerVerificationManager {
                 return "mod list hash mismatch — pack version differs from server";
             }
         }
-
-        // (b) blacklist takes precedence over whitelist.
-        List<? extends String> blacklist = IseeUConfig.MOD_BLACKLIST.get();
-        for (String entry : payload.modList()) {
-            String modId = modIdOf(entry);
-            for (String bad : blacklist) {
-                if (bad.equalsIgnoreCase(modId)) {
-                    return "disallowed mod detected: " + modId;
-                }
-            }
-        }
-
-        // (c) whitelist (if non-empty, every mod must be in it).
-        List<? extends String> whitelist = IseeUConfig.MOD_WHITELIST.get();
-        if (whitelist != null && !whitelist.isEmpty()) {
-            for (String entry : payload.modList()) {
-                String modId = modIdOf(entry);
-                boolean ok = false;
-                for (String allowed : whitelist) {
-                    if (allowed.equalsIgnoreCase(modId)) { ok = true; break; }
-                }
-                if (!ok) return "mod not on whitelist: " + modId;
-            }
-        }
+        // 黑/白名单检查需要完整 mod 列表，当前 payload 不传输（StreamCodec.composite 上限 6 字段）。
+        // 后续可通过独立的 ModListPayload 单独传输完整列表来实现。
         return null;
     }
 

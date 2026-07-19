@@ -1,13 +1,11 @@
 package com.iseeu;
 
 import com.iseeu.config.IseeUConfig;
-import com.iseeu.network.ClientNetworkHandler;
 import com.iseeu.network.ModPayloads;
-import com.iseeu.network.ServerNetworkHandler;
 import com.iseeu.server.ServerVerificationManager;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -30,19 +28,19 @@ public final class IseeUMod {
     public static final String MOD_ID = "iseeu";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public IseeUMod(IEventBus modEventBus) {
+    public IseeUMod(IEventBus modEventBus, ModContainer modContainer) {
         // ---- common mod-load events ----
         modEventBus.addListener(IseeUMod::commonSetup);
         modEventBus.addListener(ModPayloads::register);
 
         // ---- runtime events ----
         // Server side: handshake kick-off, verification state, ban checks.
-        // (ServerNetworkHandler and ClientNetworkHandler are wired up via the payload registrar
-        //  and RegisterClientPayloadHandlersEvent respectively — no event-bus registration needed.)
+        // Client handlers are wired up via playToClient in ModPayloads — no separate event bus
+        // registration needed (NeoForge 1.21.1 registers them inline with the payload).
         NeoForge.EVENT_BUS.register(ServerVerificationManager.class);
 
         // ---- config (server file: config/iseeu-server.toml) ----
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, IseeUConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.SERVER, IseeUConfig.SPEC);
     }
 
     private static void commonSetup(final FMLCommonSetupEvent event) {
