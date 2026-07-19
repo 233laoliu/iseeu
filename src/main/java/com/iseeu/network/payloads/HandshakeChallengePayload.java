@@ -8,15 +8,10 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Server → Client. Sent once per login to challenge the client into proving its identity.
- *
- * <p>{@code challengeId} is a single-use random token; {@code serverTime} anchors replay
- * protection — the client must echo both in its reply and the server rejects any reply whose
- * {@code challengeId} it did not issue.
+ * Server → Client. Sent once per connection to challenge the client into proving its identity.
  */
 public record HandshakeChallengePayload(
         String challengeId,
-        long serverTime,
         boolean requireHardwareFingerprint
 ) implements CustomPacketPayload {
 
@@ -26,7 +21,6 @@ public record HandshakeChallengePayload(
     public static final StreamCodec<ByteBuf, HandshakeChallengePayload> STREAM_CODEC =
             StreamCodec.composite(
                     ByteBufCodecs.STRING_UTF8,    HandshakeChallengePayload::challengeId,
-                    ByteBufCodecs.VAR_LONG,       HandshakeChallengePayload::serverTime,
                     ByteBufCodecs.BOOL,           HandshakeChallengePayload::requireHardwareFingerprint,
                     HandshakeChallengePayload::new);
 

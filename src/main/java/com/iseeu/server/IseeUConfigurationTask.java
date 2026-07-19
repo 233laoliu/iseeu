@@ -60,8 +60,7 @@ public final class IseeUConfigurationTask implements ICustomConfigurationTask {
         VerificationState.issueChallenge(playerUuid, challengeId);
 
         boolean requireHwid = IseeUConfig.REQUIRE_HARDWARE_FINGERPRINT.get();
-        sender.accept(new HandshakeChallengePayload(
-                challengeId, System.currentTimeMillis(), requireHwid));
+        sender.accept(new HandshakeChallengePayload(challengeId, requireHwid));
 
         IseeUMod.LOGGER.debug("[IseeU] config-phase challenge sent to {} (cid={}).",
                 playerName, challengeId.substring(0, 8));

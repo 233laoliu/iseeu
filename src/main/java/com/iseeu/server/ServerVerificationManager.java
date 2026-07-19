@@ -80,6 +80,13 @@ public final class ServerVerificationManager {
             reject(ctx, "challenge mismatch — please rejoin");
             return;
         }
+        // Reject expired challenges — an attacker replaying a captured challenge after the
+        // timeout window will hit this before any crypto check.
+        long maxAgeMs = IseeUConfig.CHALLENGE_MAX_AGE_SECONDS.get() * 1000L;
+        if (System.currentTimeMillis() - entry.issuedAtMs > maxAgeMs) {
+            reject(ctx, "challenge expired — please rejoin");
+            return;
+        }
         if (entry.status == VerificationState.Status.VERIFIED) {
             // Already verified; acknowledge and let them through.
             ctx.finishCurrentTask(IseeUConfigurationTask.TYPE);

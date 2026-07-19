@@ -49,6 +49,10 @@ public final class IseeUConfig {
             B.comment("How long after login a client has to complete the handshake before kick.")
              .defineInRange("security.verification_timeout_seconds", 15, 5, 120);
 
+    public static final ModConfigSpec.IntValue CHALLENGE_MAX_AGE_SECONDS =
+            B.comment("Maximum age of a challenge (seconds). Rejects replayed challenges captured after this window.")
+             .defineInRange("security.challenge_max_age_seconds", 30, 10, 300);
+
     // ---------- mod list ----------
     public static final ModConfigSpec.ConfigValue<List<? extends String>> MOD_WHITELIST =
             B.comment("Allowed mod ids. Empty list = no whitelist enforcement (use MOD_LIST_HASH instead).")
