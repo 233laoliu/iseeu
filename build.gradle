@@ -5,7 +5,23 @@ plugins {
     id 'net.neoforged.moddev' version "${neo_moddev_plugin_version}"
 }
 
-version = mod_version
+// Append short git commit hash to the version for traceability.
+// Falls back to empty string when git is unavailable (e.g. source zip without .git).
+def gitShortHash = {
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'rev-parse', '--short', 'HEAD'
+            standardOutput = stdout
+            errorOutput = new ByteArrayOutputStream()
+        }
+        return stdout.toString().trim()
+    } catch (Exception ignored) {
+        return ''
+    }
+}
+
+version = "${mod_version}-${gitShortHash()}".replaceAll(/-+$/, '')
 group = mod_group_id
 
 base {
