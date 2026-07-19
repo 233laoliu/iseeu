@@ -1,0 +1,8 @@
+{
+    "iseeu.kick.timeout": "IseeU Guard: verification timed out. Please rejoin.",
+    "iseeu.kick.challenge": "IseeU Guard: handshake challenge failed. Please rejoin.",
+    "iseeu.kick.internal": "IseeU Guard: internal verification error.",
+    "iseeu.menu.title": "IseeU Guard",
+    "iseeu.status.verified": "Verified",
+    "iseeu.status.pending": "Pending"
+}

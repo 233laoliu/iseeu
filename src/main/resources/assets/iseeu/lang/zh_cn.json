@@ -1,0 +1,8 @@
+{
+    "iseeu.kick.timeout": "反作弊验证超时，请重新进入服务器。",
+    "iseeu.kick.challenge": "反作弊握手失败，请重新进入服务器。",
+    "iseeu.kick.internal": "反作弊内部校验错误。",
+    "iseeu.menu.title": "反作弊守卫",
+    "iseeu.status.verified": "已验证",
+    "iseeu.status.pending": "验证中"
+}

@@ -1,0 +1,28 @@
+# gradle
+.gradle/
+build/
+out/
+runs/
+run-data/
+repo/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+
+# 排除 README（用户要求不上传）
+README.md
