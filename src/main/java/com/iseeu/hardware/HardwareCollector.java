@@ -63,8 +63,12 @@ public final class HardwareCollector {
                         "ioreg -rd1 -c IOPlatformDevice | grep -i 'cpu-id\\|IOPlatformUUID' | head -n2");
                 return firstHexishLine(out);
             }
-            // Linux
-            return firstHexishLine(readFirstLine("/proc/cpuinfo"));
+            // Linux — /proc/cpuinfo doesn't contain a serial number, fall back to mainboard UUID.
+            String cpuLine = firstHexishLine(readFirstLine("/proc/cpuinfo"));
+            if (cpuLine != null && !cpuLine.equals("cpu-unknown")) return cpuLine;
+            // Fall back to DMI product UUID (mainboard-level unique ID).
+            String dmi = readFirstLine("/sys/class/dmi/id/product_uuid");
+            return dmi != null ? dmi.trim() : "cpu-unknown";
         } catch (Exception e) {
             IseeUMod.LOGGER.debug("[IseeU] CPU id read failed: {}", e.toString());
             return "cpu-unknown";

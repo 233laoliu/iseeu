@@ -24,7 +24,7 @@ public final class ServerNetworkHandler {
             ServerVerificationManager.handleVerification(payload, ctx);
         } catch (Throwable t) {
             // Never let an exception in verification crash the netty thread.
-            IseeUMod.LOGGER.error("[IseeU] verification threw: {}", t.toString());
+            IseeUMod.LOGGER.error("[IseeU] verification threw", t);
             ctx.disconnect(Component.literal("[IseeU] internal verification error"));
         }
     }

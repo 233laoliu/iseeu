@@ -1,5 +1,6 @@
 package com.iseeu.network;
 
+import com.iseeu.IseeUMod;
 import com.iseeu.config.IseeUConfig;
 import com.iseeu.util.HashUtils;
 
@@ -23,9 +24,15 @@ public final class PacketCrypto {
 
     private PacketCrypto() {}
 
+    private static volatile boolean secretChecked;
+
     /** @return HMAC-SHA256(secret, message) as lowercase hex. */
     public static String signMessage(String message) {
         String secret = IseeUConfig.SERVER_SECRET.get();
+        if (!secretChecked && "REPLACE_ME_WITH_A_LONG_RANDOM_SECRET".equals(secret)) {
+            secretChecked = true;
+            IseeUMod.LOGGER.warn("[IseeU] server_secret is the default — signatures provide no real security!");
+        }
         return HashUtils.hmacSha256Hex(secret, message);
     }
 
